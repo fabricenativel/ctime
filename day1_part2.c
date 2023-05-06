@@ -20,7 +20,7 @@ int start() {
 }
 
 bool is_in(long int value, long int tab[], long int tab_size) {
-    for (int i=0;i<=tab_size;i++) 
+    for (int i=0;i<tab_size;i++) 
     {
         if (tab[i] == value) return true;
     }
