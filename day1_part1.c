@@ -3,44 +3,32 @@
 #include <stdlib.h>
 
 
-const char PB[] = "1";
-const char YEAR[] = "2018";
-const char BASE_URL[] = "https://adventofcode.com/";
-const int STRLEN = 255;
+static const char PB[] = "1";
+static const char YEAR[] = "2018";
+static const char BASE_URL[] = "https://adventofcode.com/";
+static const int DEFAULT_LINE_LENGTH = 255;
 
-int start() {
-    printf("AoC Année %s - Probleme %s \n",YEAR,PB);
-    char url[STRLEN] ;
-    strcpy(url,BASE_URL);
-    strcat(url,YEAR);
-    strcat(url,"/day/");
-    strcat(url,PB);
-    strcat(url,"\n");
-    printf("%s",url);
+static void start(void) {
+    printf("AoC Année %s - Probleme %s\n", YEAR, PB);
+    printf("%s%s/day/%s\n", BASE_URL, YEAR, PB);
 }
 
-char *get_filename() {
-    char* filename = malloc(sizeof(char)*STRLEN);
-    strcpy(filename,"input");
-    strcat(filename,PB) ;
-    strcat(filename,".txt") ;
-    return filename;
-}
-
-int solve() {
-    long int somme = 0;
-    char* filename = get_filename();
+static long int solve(void) {
+    char filename[sizeof(char)*DEFAULT_LINE_LENGTH];
+    snprintf(filename, DEFAULT_LINE_LENGTH,  "input%s.txt", PB);
     FILE* fileptr = fopen(filename,"r");
-    char line[STRLEN];
+
+    long int somme = 0;
+    char line[DEFAULT_LINE_LENGTH];
     while (fgets(line,sizeof(line),fileptr)) {
         somme += atoi(line);
     }
     fclose(fileptr);
+
     return somme;
 }
 
-int main() {
+int main(void) {
     start();
-    int rep = solve();
-    printf("Réponse : %i \n",rep);
+    printf("Réponse : %li \n", solve());
 }
