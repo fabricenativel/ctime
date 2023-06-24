@@ -45,7 +45,6 @@ void view_list(node *linked_list)
         linked_list = linked_list->next;
     }
     printf("\n");
-    return false;
 }
 
 int get_hash(int value)
@@ -76,7 +75,7 @@ void insert_in_hashtable(node* hashtable[HASHTABLE_SIZE], int val)
 }
 
 
-int start() {
+void start() {
     printf("AoC Année %s - Probleme %s \n",YEAR,PB);
     char url[STRLEN] ;
     strcpy(url,BASE_URL);
@@ -98,13 +97,13 @@ char *get_filename() {
 
 
 int solve() {
-    long int somme = 0;
+    int somme = 0;
     char* filename = get_filename();
     FILE* fileptr = fopen(filename,"r");
     node* hashtable[HASHTABLE_SIZE]={NULL};
     char line[STRLEN];
     while (true) {
-    while (fgets(line,sizeof(line),fileptr)) {
+    while (fgets(line,(int)sizeof(line),fileptr)) {
         somme += atoi(line);
         if (is_in_hashtable(hashtable,somme))
             {return somme;}

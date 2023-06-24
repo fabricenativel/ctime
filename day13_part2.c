@@ -20,6 +20,7 @@ struct cart
     char dir;
     char turn;
     bool moved;
+    bool active;
 };
 typedef struct cart cart;
 
@@ -96,7 +97,7 @@ int get_cn(int l, int c, cart carts[], int nb_carts)
 {
     for (int i = 0; i < nb_carts; i++)
     {
-        if (carts[i].lig == l && carts[i].col == c)
+        if (carts[i].lig == l && carts[i].col == c && carts[i].active)
             return i;
     }
     return -1;
@@ -142,7 +143,7 @@ void affiche(char map[200][200], cart carts[], int nb_carts)
     char lmap[200][200] = {{0}};
     for (int n = 0; n < nb_carts; n++)
     {
-        lmap[carts[n].lig][carts[n].col] = carts[n].dir;
+        if (carts[n].active) {lmap[carts[n].lig][carts[n].col] = carts[n].dir;}
     }
     for (int i = 0; i < ml; i++)
     {
@@ -206,7 +207,7 @@ char set_dir(char current, char turn)
     return nd;
 }
 
-bool move(cart carts[], char map[200][200], int nb_carts, int cart_number, int *lig_collision, int *col_collision)
+bool move(cart carts[], char map[200][200], int nb_carts, int cart_number, int *lig_collision, int *col_collision, int *other)
 {
     switch (carts[cart_number].dir)
     {
@@ -237,17 +238,18 @@ bool move(cart carts[], char map[200][200], int nb_carts, int cart_number, int *
     }
     for (int n = 0; n < nb_carts; n++)
     {
-        if (n != cart_number && carts[cart_number].lig == carts[n].lig && carts[cart_number].col == carts[n].col)
+        if (n != cart_number && carts[cart_number].lig == carts[n].lig && carts[cart_number].col == carts[n].col && carts[n].active)
         {
             *lig_collision = carts[cart_number].lig;
             *col_collision = carts[cart_number].col;
+            *other = n;
             return true;
         }
     }
     return false;
 }
 
-int solve(bool simple,int *lig_collision, int* col_collision)
+int solve(bool simple, int *lig_collision, int *col_collision)
 {
     char *filename = get_filename(simple);
     FILE *fileptr = fopen(filename, "r");
@@ -258,6 +260,8 @@ int solve(bool simple,int *lig_collision, int* col_collision)
     int il = 0, ic = 0;
     char rc;
     bool collision_detected = false;
+    int remaining; 
+    int other;
     while ((rc = (char)fgetc(fileptr)) != EOF)
     {
         if (rc != '\n')
@@ -283,6 +287,7 @@ int solve(bool simple,int *lig_collision, int* col_collision)
                 carts[nb_carts].dir = map[l][c];
                 carts[nb_carts].turn = 'L';
                 carts[nb_carts].moved = false;
+                carts[nb_carts].active = true;
                 if (map[l][c] == '>' || map[l][c] == '<')
                     map[l][c] = '-';
                 if (map[l][c] == '^' || map[l][c] == 'v')
@@ -291,28 +296,51 @@ int solve(bool simple,int *lig_collision, int* col_collision)
             }
         }
     }
-    while (!collision_detected)
+    printf("Il y a %i karts\n",nb_carts);
+    remaining = nb_carts;
+    while (remaining != 1)
     {
-        ic++;
-        if (ic == mc)
+        while (!collision_detected)
         {
-            ic = 0;
-            il++;
-            if (il == ml)
+            ic++;
+            if (ic == mc)
             {
-                il = 0;
-                for (int i = 0; i < nb_carts; i++)
+                ic = 0;
+                il++;
+                if (il == ml)
                 {
-                    carts[i].moved = false;
+                    il = 0;
+                    for (int i = 0; i < nb_carts; i++)
+                    {
+                        carts[i].moved = false;
+                    }
+                    nb_tours++;
                 }
-                nb_tours++;
             }
+            cn = get_cn(il, ic, carts, nb_carts);
+            if (cn != -1 && !carts[cn].moved)
+            {
+                collision_detected = move(carts, map, nb_carts, cn, lig_collision, col_collision,&other);
+                carts[cn].moved = true;
+                //affiche(map,carts,nb_carts);
+                //rc = getchar();
+            }
+
         }
-        cn = get_cn(il, ic, carts, nb_carts);
-        if (cn != -1 && !carts[cn].moved)
+        carts[cn].active = false;
+        carts[other].active =  false;
+        remaining -= 2;
+        printf("Retrait des karts %i et %i\n",cn,other);
+        collision_detected = false;
+    }
+    for (int i=0;i<nb_carts;i++)
+    {
+        if (carts[i].active)
         {
-            collision_detected = move(carts, map, nb_carts, cn, lig_collision, col_collision);
-            carts[cn].moved = true;
+            collision_detected = move(carts, map, nb_carts, i, lig_collision, col_collision,&other);
+            *lig_collision = carts[i].lig;
+            *col_collision = carts[i].col;
+            //printf("Survivant (cart %i) en (%i,%i)\n",i,carts[i].col,carts[i].lig);
         }
     }
     return 0;
@@ -321,9 +349,9 @@ int solve(bool simple,int *lig_collision, int* col_collision)
 int main(int argc, char *argv[])
 {
     bool simple;
-    int lig,col;
+    int lig, col;
     start();
     simple = (argc >= 2);
-    solve(simple,&lig,&col);
-    printf("Résultat : collission en (%i,%i)\n", col,lig);
+    solve(simple, &lig, &col);
+    printf("Résultat : survivant en (%i,%i)\n", col, lig);
 }
