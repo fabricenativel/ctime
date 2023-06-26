@@ -7,16 +7,15 @@
 const char PB[] = "1";
 const char YEAR[] = "2018";
 const char BASE_URL[] = "https://adventofcode.com/";
-const long unsigned int STRLEN = 255;
+const long unsigned int DEFAULT_LINE_LENGTH = 255;
 
 #define HASHTABLE_SIZE  10000
 
-struct node 
+typedef struct node
 {
     int value;
     struct node *next;
-};
-typedef struct node node;
+} node;
 
 bool is_in_list(node *linked_list,int val)
 {
@@ -53,7 +52,7 @@ int get_hash(int value)
 }
 
 
-void view_hashtable(node * hastable[HASHTABLE_SIZE])
+void view_hashtable(node** hastable)
 {
     for (int i=0;i<HASHTABLE_SIZE;i++)
     {
@@ -62,58 +61,65 @@ void view_hashtable(node * hastable[HASHTABLE_SIZE])
     }
 }
 
-bool is_in_hashtable(node* hashtable[HASHTABLE_SIZE], int val)
+bool is_in_hashtable(node** hashtable, int val)
 {
     int bucket_number = get_hash(val);
     return is_in_list(hashtable[bucket_number],val);
 }
 
-void insert_in_hashtable(node* hashtable[HASHTABLE_SIZE], int val)
+void insert_in_hashtable(node** hashtable, int val)
 {
     int bucket_number = get_hash(val);
     hashtable[bucket_number] = insert_in_list(hashtable[bucket_number],val);
 }
 
 
-void start() {
-    printf("AoC Année %s - Probleme %s \n",YEAR,PB);
-    char url[STRLEN] ;
-    strcpy(url,BASE_URL);
-    strcat(url,YEAR);
-    strcat(url,"/day/");
-    strcat(url,PB);
-    strcat(url,"\n");
-    printf("%s",url);
+void start(void) {
+    printf("AoC Année %s - Probleme %s \n", YEAR, PB);
+    printf("%s%s/day/%s\n", BASE_URL, YEAR, PB);
 }
 
+void destroy_linked_list(node *list) {
+    while (list != NULL) {
+       node *backup = list->next;
+       free(list);
+       list = backup;
+    }
+}
 
-char *get_filename() {
-    char* filename = malloc(sizeof(char)*STRLEN);
-    strcpy(filename,"input");
-    strcat(filename,PB) ;
-    strcat(filename,".txt") ;
-    return filename;
+void destroy_hash_table(node **hashtable) {
+    for (int i = 0; i < HASHTABLE_SIZE; i++) {
+        destroy_linked_list(hashtable[i]);
+    }
 }
 
 
 int solve() {
     int somme = 0;
-    char* filename = get_filename();
+    char filename[sizeof(char)*DEFAULT_LINE_LENGTH];
+    snprintf(filename, DEFAULT_LINE_LENGTH,  "input%s.txt", PB);
     FILE* fileptr = fopen(filename,"r");
+
     node* hashtable[HASHTABLE_SIZE]={NULL};
-    char line[STRLEN];
+
+    char line[DEFAULT_LINE_LENGTH];
     while (true) {
     while (fgets(line,(int)sizeof(line),fileptr)) {
         somme += atoi(line);
-        if (is_in_hashtable(hashtable,somme))
-            {return somme;}
-        else 
-            {insert_in_hashtable(hashtable,somme);
-            }
+        if (is_in_hashtable(hashtable,somme)) {
+            destroy_hash_table(hashtable);
+            fclose(fileptr);
+            return somme;
+        }
+        else {
+            insert_in_hashtable(hashtable,somme);
+        }
     }
     rewind(fileptr);
     }
     fclose(fileptr);
+
+
 }
 
 int main() {
